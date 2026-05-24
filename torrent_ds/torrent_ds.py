@@ -32,8 +32,8 @@ def main():
             logger.info("Hitnrun function is disabled. Skip.")
 
         start_time = datetime.now()
-        start_time_recommended = datetime.now()
-        start_time_hitnrun = datetime.now()
+        start_time_recommended = datetime.min
+        start_time_hitnrun = datetime.min
         download_manager = DownloadManager(config)
         # state of torrents in the configured torrent client
         started = True
