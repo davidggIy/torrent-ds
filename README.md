@@ -6,8 +6,10 @@ Torrentszerver applikáció Ncore-hoz. Képes kezelni az rss feed-eket illetve a
 
 Funkciók:
 * Periódikusan megnyitja a torrenteket az rss feed linkeket használva, és a meghatározott kategóriákat képes külön könyvtárakba letölteni. (Bármennyi rss link megadható)
+* Transmission vagy qBittorrent klienssel is használható.
 * A konfigurációban meghatározott intervallum alatt leállítja az összes torrentet (pl.: napközben munka mellett) (opcionális)
 * Meghatározott időnként letölti a staff által ajánlottnak jelölt torrenteket, kategóriánként beállított könyvtárakba (opcionális)
+* Meghatározott időnként ellenőrzi az nCore aktivitást, és a beállított műfajokhoz tartozó torrenteket letölti hit'n'run pótláshoz (opcionális)
 
 
 ## Telepítés
@@ -44,6 +46,16 @@ Két fájl tartalmazza az összes konfigurációt a programhoz:
 ### config.ini
 Minden szekció ([]-ben) kötelező mező (kivéve az rss), a többi lehet opcionális vagy kötelező.
 ```
+[torrent_client]
+type = transmission   | Kötelező
+                      | Lehetséges értékek: transmission és qbittorrent.
+sleep_days =          | Opcionális
+                      | A megadott napokon fog érvénybe lépni a sleep_time értéke
+                      | 1:hétfő -> 7:vasárnap, ;-vel elválasztva. Pl.: 1;2;3;4;5
+sleep_time =          | Opcionális
+                      | A megadott intervallumban az aktuálisan futó torrenteket
+                      | szünetelteti. A formátum: 00:00:00-00:00:00
+
 [transmission]
 authenticate = False  | Kötelező
                       | A lehetséges értékek: True és False.
@@ -54,14 +66,15 @@ ip_address =          | Opcionális
                       | A transmission remote ip_címe
 port =                | Opcionális
                       | A transmission remote port-ja. Az alapértelmezett: 9091
-sleep_days =          | Opcionális
-                      | A megadott napokon fog érvénybe lépni a sleep_time értéke
-                      | 1:hétfő -> 7:vasárnap, ;-vel elválasztva. Pl.: 1;2;3;4;5
-                      | vagyis hétfő,kedd,szerda,csütörtök,péntek. Ezeken a napokon
-                      | fog végrehajtódni.
-sleep_time =          | Opcionális
-                      | A megadott intervallumban az aktuálisan futó torrenteket
-                      | szünetelteti. A formátum: 00:00:00-00:00:00
+
+[qbittorrent]
+authenticate = False  | Kötelező
+                      | Ha True, a credentials.ini [qbittorrent] szekcióját használja.
+host = http://localhost
+                      | Opcionális
+                      | A qBittorrent Web UI címe.
+port = 8080           | Opcionális
+                      | A qBittorrent Web UI portja.
 
 [download]
 retry_interval = 10   | Kötelező
@@ -88,6 +101,22 @@ musics =              | A zenéket az itt megadott mappába tölti le pl: /home/
 games =               | A játékokat az itt megadott mappába tölti le pl: /home/osmc/Downloads/games
 books =               | A könyveket az itt megadott mappába tölti le pl: /home/osmc/Downloads/books
 programs =            | A filmeket az itt megadott mappába tölti le pl: /home/osmc/Downloads/programs
+xxx =
+
+[hitnrun]             | Az nCore aktivitás oldalról letöltendő torrentek.
+enable = False        | Kötelező
+credential = cred1    | Kötelező
+                      | Azonosító szekció a credentials.ini fájlban
+retry_interval = 5    | Kötelező
+                      | Az aktivitás ellenőrzésének gyakorisága (órában)
+movies =              | A filmeket az itt megadott mappába tölti le
+                      | Ha egy kategóriához nincs mappa megadva, azt kihagyja.
+series =              | A sorozatokat az itt megadott mappába tölti le
+musics =
+clips =
+games =
+books =
+programs =
 xxx =
 
 [rss bookmark1]       | Az rss-el kezdődő szekció: [rss <szekciónév>] pl: [rss Bela_rss]
@@ -124,6 +153,11 @@ A username értéke legyen a felhasználónév és a raw_password a jelszó. A j
 [transmission]      | Azonsító a Transmission-hoz. Ha az authenticate értéke True a config.ini-ben
 user_name =         | Transmission felhasználónév
 raw_password =      | Transmission jelszó
+password =          | Titkosított jelszó. Automatikusan íródik ki
+
+[qbittorrent]       | Azonsító a qBittorrent-hez. Ha az authenticate értéke True a config.ini-ben
+user_name =         | qBittorrent felhasználónév
+raw_password =      | qBittorrent jelszó
 password =          | Titkosított jelszó. Automatikusan íródik ki
 
 [cred1]             | Azonosító mező az Ncore-hoz. Bármilyen nevet kaphat pl.: [Bela]

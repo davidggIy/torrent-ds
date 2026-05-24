@@ -42,7 +42,7 @@ class Torrent(SqlAlchemyBase):
     __tablename__ = "torrents"
 
     tracker_id = sa.Column(sa.Integer, primary_key=True, nullable=False)
-    transmission_id = sa.Column(sa.Integer, nullable=False)
+    client_id = sa.Column(sa.String, nullable=False)
     title = sa.Column(sa.String)
     label = sa.Column(sa.String)
     date = sa.Column(sa.DateTime, default=datetime.datetime.now)

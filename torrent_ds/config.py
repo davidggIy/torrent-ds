@@ -13,6 +13,11 @@ user_name = username
 raw_password = password
 password =
 
+[qbittorrent]
+user_name = username
+raw_password = password
+password =
+
 [cred1]
 user_name = username
 raw_password = password
@@ -25,12 +30,21 @@ password =
 """
 
 CONFIG_SAMPLE = """
+[torrent_client]
+# transmission or qbittorrent
+type = transmission
+sleep_days =
+sleep_time =
+
 [transmission]
 authenticate = False
 ip_address =
 port =
-sleep_days =
-sleep_time =
+
+[qbittorrent]
+authenticate = False
+host = http://localhost
+port = 8080
 
 [download]
 # second
@@ -46,6 +60,20 @@ retry_interval = 5
 movies =
 series =
 musics =
+games =
+books =
+programs =
+xxx =
+
+[hitnrun]
+enable = False
+credential = cred1
+# hour
+retry_interval = 5
+movies =
+series =
+musics =
+clips =
 games =
 books =
 programs =
