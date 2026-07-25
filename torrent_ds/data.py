@@ -32,6 +32,14 @@ def global_init():
 
     SqlAlchemyBase.metadata.create_all(engine)
 
+    session = __factory()
+    existing_ids = {r.tracker_id for r in session.query(SeenTorrent).all()}
+    for torrent in session.query(Torrent).all():
+        if torrent.tracker_id not in existing_ids:
+            session.add(SeenTorrent(tracker_id=torrent.tracker_id, seen_at=torrent.date))
+    session.commit()
+    session.close()
+
 
 def create_session():
     global __factory
@@ -46,3 +54,10 @@ class Torrent(SqlAlchemyBase):
     title = sa.Column(sa.String)
     label = sa.Column(sa.String)
     date = sa.Column(sa.DateTime, default=datetime.datetime.now)
+
+
+class SeenTorrent(SqlAlchemyBase):
+    __tablename__ = "seen_torrents"
+
+    tracker_id = sa.Column(sa.Integer, primary_key=True, nullable=False)
+    seen_at = sa.Column(sa.DateTime, default=datetime.datetime.now)

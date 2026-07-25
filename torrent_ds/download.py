@@ -14,7 +14,7 @@ from ncoreparser import (
     Size
 )
 
-from torrent_ds.data import create_session, Torrent
+from torrent_ds.data import create_session, Torrent, SeenTorrent
 from torrent_ds.creds import Credential
 from torrent_ds.torrent_client import BaseTorrentClient
 
@@ -120,7 +120,8 @@ class DownloadManager:
             return
         db_session = create_session()
 
-        if db_session.query(Torrent).filter(Torrent.tracker_id == torrent["id"]).count() != 0:
+        already_seen = db_session.query(SeenTorrent).filter(SeenTorrent.tracker_id == torrent["id"]).count() != 0
+        if already_seen:
             db_session.close()
             return
 
@@ -145,6 +146,9 @@ class DownloadManager:
             torrent_db.title = torrent["title"]
             torrent_db.label = label
             db_session.add(torrent_db)
+            seen = SeenTorrent()
+            seen.tracker_id = torrent["id"]
+            db_session.add(seen)
             db_session.commit()
             self._logger.info("Download torrent: '{}' to '{}'.".format(torrent['title'], d_path))
         except NcoreConnectionError:
