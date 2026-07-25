@@ -1,4 +1,3 @@
-import os
 import sys
 import logging
 import time
@@ -6,7 +5,6 @@ import inspect
 from datetime import datetime
 
 import torrent_ds.error
-from torrent_ds.error import MissingConfigError
 from torrent_ds.data import global_init as db_init
 from torrent_ds.logger import init_logger
 from torrent_ds.download import DownloadManager
@@ -30,34 +28,43 @@ def main():
 
         if config["recommended"].get("enable") != "True":
             logger.info("Recommended function is disabled. Skip.")
+        if not config.has_section("hitnrun") or config["hitnrun"].get("enable") != "True":
+            logger.info("Hitnrun function is disabled. Skip.")
 
         start_time = datetime.now()
-        start_time_recommended = datetime.now()
-        # state of torrents in transmission
+        start_time_recommended = datetime.min
+        start_time_hitnrun = datetime.min
+        download_manager = DownloadManager(config)
+        # state of torrents in the configured torrent client
         started = True
         while True:
 
             if check_time(start_time, seconds=int(config["download"]["retry_interval"])):
-                DownloadManager(config).clean_db()
-                DownloadManager(config).download_rss()
+                download_manager.clean_db()
+                download_manager.download_rss()
                 start_time = datetime.now()
 
             if config["recommended"].get("enable") == "True":
                 if check_time(start_time_recommended, hours=int(config["recommended"]["retry_interval"])):
-                    DownloadManager(config).download_recommended()
+                    download_manager.download_recommended()
                     start_time_recommended = datetime.now()
 
-            sleep_days = config["transmission"].get("sleep_days")
-            sleep_time = config["transmission"].get("sleep_time")
+            if config.has_section("hitnrun") and config["hitnrun"].get("enable") == "True":
+                if check_time(start_time_hitnrun, hours=int(config["hitnrun"]["retry_interval"])):
+                    download_manager.download_hitnrun()
+                    start_time_hitnrun = datetime.now()
+
+            sleep_days = config.get("torrent_client", "sleep_days", fallback=config["transmission"].get("sleep_days"))
+            sleep_time = config.get("torrent_client", "sleep_time", fallback=config["transmission"].get("sleep_time"))
             if sleep_time and sleep_days:
                 if (check_between_time(sleep_time.split('-')[0], sleep_time.split('-')[1])
                     and check_sleep_day(sleep_days.split(';'))):
                     if started:
-                        DownloadManager(config).stop_all()
+                        download_manager.stop_all()
                         started = False
                 else:
                     if not started:
-                        DownloadManager(config).start_all()
+                        download_manager.start_all()
                         started = True
 
             time.sleep(1)
