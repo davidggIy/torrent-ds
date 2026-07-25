@@ -118,7 +118,11 @@ class QBittorrentTorrentClient(BaseTorrentClient):
         args = {"torrent_files": file_path}
         if download_dir:
             args["save_path"] = os.path.abspath(download_dir)
-        self._client.torrents_add(**args)
+        try:
+            self._client.torrents_add(**args)
+        except qbittorrentapi.Conflict409Error:
+            self._logger.info("Torrent already exists in qBittorrent: '{}'.".format(
+                torrent["title"] if torrent else file_path))
         return self._find_torrent_id(file_path, torrent)
 
     def _find_torrent_id(self, file_path, torrent):
