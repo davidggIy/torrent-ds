@@ -57,6 +57,8 @@ categories = movies;series;musics;games;programs;books;xxx
 max_size = 3 GiB
 # leave empty to disable
 keep_free_space = 100 GiB
+# leave empty to disable
+max_count = 20
 # hour
 retry_interval = 5
 movies =

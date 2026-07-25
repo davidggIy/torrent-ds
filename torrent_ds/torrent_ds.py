@@ -2,6 +2,7 @@ import sys
 import logging
 import time
 import inspect
+import threading
 from datetime import datetime
 
 import torrent_ds.error
@@ -35,6 +36,8 @@ def main():
         start_time_recommended = datetime.min
         start_time_hitnrun = datetime.min
         download_manager = DownloadManager(config)
+        recommended_thread = None
+        hitnrun_thread = None
         # state of torrents in the configured torrent client
         started = True
         while True:
@@ -45,13 +48,19 @@ def main():
                 start_time = datetime.now()
 
             if config["recommended"].get("enable") == "True":
-                if check_time(start_time_recommended, hours=int(config["recommended"]["retry_interval"])):
-                    download_manager.download_recommended()
+                thread_idle = recommended_thread is None or not recommended_thread.is_alive()
+                if thread_idle and check_time(start_time_recommended, hours=int(config["recommended"]["retry_interval"])):
+                    recommended_thread = threading.Thread(
+                        target=download_manager.download_recommended, daemon=True)
+                    recommended_thread.start()
                     start_time_recommended = datetime.now()
 
             if config.has_section("hitnrun") and config["hitnrun"].get("enable") == "True":
-                if check_time(start_time_hitnrun, hours=int(config["hitnrun"]["retry_interval"])):
-                    download_manager.download_hitnrun()
+                thread_idle = hitnrun_thread is None or not hitnrun_thread.is_alive()
+                if thread_idle and check_time(start_time_hitnrun, hours=int(config["hitnrun"]["retry_interval"])):
+                    hitnrun_thread = threading.Thread(
+                        target=download_manager.download_hitnrun, daemon=True)
+                    hitnrun_thread.start()
                     start_time_hitnrun = datetime.now()
 
             sleep_days = config.get("torrent_client", "sleep_days", fallback=config["transmission"].get("sleep_days"))

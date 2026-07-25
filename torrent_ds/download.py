@@ -243,6 +243,8 @@ class DownloadManager:
         max_size = Size(size_cfg) if size_cfg else None
         keep_free_cfg = self._config["recommended"].get("keep_free_space")
         keep_free_size = Size(keep_free_cfg) if keep_free_cfg else None
+        max_count_cfg = self._config["recommended"].get("max_count")
+        max_count = int(max_count_cfg) if max_count_cfg else None
         self._logger.info("Downloading recommended...")
         categories = self._get_config_list("recommended", "categories")
         for category in categories:
@@ -260,7 +262,11 @@ class DownloadManager:
                 except NcoreParserError as e:
                     self._logger.warning("Error while parsing web page. {}".format(e))
                     continue
+                added = 0
                 for torrent in torrents:
+                    if max_count and added >= max_count:
+                        self._logger.info("Reached recommended max_count limit ({}).".format(max_count))
+                        break
                     if max_size and torrent['size'] > max_size:
                         self._logger.info("Skipping torrent '{}', it is too large: '{}'.".format(torrent['title'],
                                                                                                  torrent['size']))
@@ -268,6 +274,7 @@ class DownloadManager:
                     if not self._has_enough_free_space(torrent, keep_free_size):
                         continue
                     self._add_torrent(torrent, tracker_client, torrent_client, "recommended")
+                    added += 1
         tracker_client.logout()
 
     def download_hitnrun(self):
