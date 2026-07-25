@@ -11,6 +11,7 @@ from ncoreparser import (
     NcoreConnectionError,
     NcoreDownloadError,
     NcoreParserError,
+    Size
 )
 
 from torrent_ds.data import create_session, Torrent
@@ -207,8 +208,8 @@ class DownloadManager:
                 self._add_torrent(torrent, tracker_client, torrent_client, rss)
             tracker_client.logout()
 
-    def _has_enough_free_space(self, torrent, keep_free_gb):
-        if keep_free_gb is None or keep_free_gb < 0:
+    def _has_enough_free_space(self, torrent, keep_free_size):
+        if keep_free_size is None:
             return True
         d_path = self._get_download_path(torrent, "recommended")
         if d_path is None:
@@ -216,18 +217,17 @@ class DownloadManager:
         download_dir = os.path.abspath(d_path)
         if not os.path.exists(download_dir):
             return True
-        keep_free_bytes = keep_free_gb * 1_000_000_000
         torrent_size_bytes = torrent['size'].bytes
         free_bytes = shutil.disk_usage(download_dir).free
-        if (free_bytes - torrent_size_bytes) >= keep_free_bytes:
+        if (free_bytes - torrent_size_bytes) >= keep_free_size.bytes:
             return True
         self._logger.info(
-            "Skipping torrent '{}' (size: {:.2f} GB): insufficient free space "
-            "(free: {:.2f} GB, keep free: {:.2f} GB).".format(
+            "Skipping torrent '{}' (size: {}): insufficient free space "
+            "(free: {:.2f} GiB, keep free: {}).".format(
                 torrent['title'],
-                torrent_size_bytes / 1_000_000_000,
-                free_bytes / 1_000_000_000,
-                keep_free_gb
+                torrent['size'],
+                free_bytes / 1024**3,
+                keep_free_size
             )
         )
         return False
@@ -240,9 +240,9 @@ class DownloadManager:
         if torrent_client is None:
             return
         size_cfg = self._config["recommended"].get("max_size")
-        max_size_bytes = float(size_cfg) * 1_000_000_000 if size_cfg else None
+        max_size = Size(size_cfg) if size_cfg else None
         keep_free_cfg = self._config["recommended"].get("keep_free_space")
-        keep_free_gb = float(keep_free_cfg) if keep_free_cfg else None
+        keep_free_size = Size(keep_free_cfg) if keep_free_cfg else None
         self._logger.info("Downloading recommended...")
         categories = self._get_config_list("recommended", "categories")
         for category in categories:
@@ -261,11 +261,11 @@ class DownloadManager:
                     self._logger.warning("Error while parsing web page. {}".format(e))
                     continue
                 for torrent in torrents:
-                    if max_size_bytes and torrent['size'].bytes > max_size_bytes:
+                    if max_size and torrent['size'] > max_size:
                         self._logger.info("Skipping torrent '{}', it is too large: '{}'.".format(torrent['title'],
                                                                                                  torrent['size']))
                         continue
-                    if not self._has_enough_free_space(torrent, keep_free_gb):
+                    if not self._has_enough_free_space(torrent, keep_free_size):
                         continue
                     self._add_torrent(torrent, tracker_client, torrent_client, "recommended")
         tracker_client.logout()
